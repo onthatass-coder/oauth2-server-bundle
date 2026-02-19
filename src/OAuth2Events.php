@@ -40,6 +40,14 @@ final class OAuth2Events
     public const TOKEN_REQUEST_RESOLVE = 'league.oauth2_server.event.token_request_resolve';
 
     /**
+     * The BEFORE_JWT_TOKEN_BUILD event is dispatched just before the JWT token
+     * is built by the BearerTokenResponse.
+     *
+     * You could add custom claims to the JWT builder here
+     */
+    public const PRE_ACCESS_TOKEN_BUILD = 'league.oauth2_server.event.pre_jwt_access_token_build';
+
+    /**
      * The PRE_SAVE_CLIENT event occurs right before the client is saved
      * by a ClientManager.
      *

@@ -6,40 +6,26 @@ namespace League\Bundle\OAuth2ServerBundle\Repository;
 
 use League\Bundle\OAuth2ServerBundle\Converter\ScopeConverterInterface;
 use League\Bundle\OAuth2ServerBundle\Entity\AccessToken as AccessTokenEntity;
+use League\Bundle\OAuth2ServerBundle\Event\PreAccessTokenBuildEvent;
 use League\Bundle\OAuth2ServerBundle\Manager\AccessTokenManagerInterface;
 use League\Bundle\OAuth2ServerBundle\Manager\ClientManagerInterface;
 use League\Bundle\OAuth2ServerBundle\Model\AbstractClient;
 use League\Bundle\OAuth2ServerBundle\Model\AccessToken as AccessTokenModel;
+use League\Bundle\OAuth2ServerBundle\OAuth2Events;
 use League\OAuth2\Server\Entities\AccessTokenEntityInterface;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Exception\UniqueTokenIdentifierConstraintViolationException;
 use League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 final class AccessTokenRepository implements AccessTokenRepositoryInterface
 {
-    /**
-     * @var AccessTokenManagerInterface
-     */
-    private $accessTokenManager;
-
-    /**
-     * @var ClientManagerInterface
-     */
-    private $clientManager;
-
-    /**
-     * @var ScopeConverterInterface
-     */
-    private $scopeConverter;
-
     public function __construct(
-        AccessTokenManagerInterface $accessTokenManager,
-        ClientManagerInterface $clientManager,
-        ScopeConverterInterface $scopeConverter,
+        private readonly AccessTokenManagerInterface $accessTokenManager,
+        private readonly ClientManagerInterface $clientManager,
+        private readonly ScopeConverterInterface $scopeConverter,
+        private readonly EventDispatcherInterface $eventDispatcher,
     ) {
-        $this->accessTokenManager = $accessTokenManager;
-        $this->clientManager = $clientManager;
-        $this->scopeConverter = $scopeConverter;
     }
 
     public function getNewToken(ClientEntityInterface $clientEntity, array $scopes, ?string $userIdentifier = null): AccessTokenEntityInterface
@@ -53,6 +39,11 @@ final class AccessTokenRepository implements AccessTokenRepositoryInterface
         foreach ($scopes as $scope) {
             $accessToken->addScope($scope);
         }
+
+        $this->eventDispatcher->dispatch(
+            new PreAccessTokenBuildEvent($accessToken),
+            OAuth2Events::PRE_ACCESS_TOKEN_BUILD
+        );
 
         return $accessToken;
     }
