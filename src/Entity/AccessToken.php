@@ -103,6 +103,10 @@ final class AccessToken implements AccessTokenEntityInterface
             $builder = $builder->withHeader($key, $value);
         }
 
+        if (null !== $this->getNonce()) {
+            $builder = $builder->withClaim('nonce', $this->getNonce()) ;
+        }
+
         return $builder
             ->withClaim('scopes', $this->getScopes()) // We don't allow overriding scopes via custom claims
             ->getToken($this->jwtConfiguration->signer(), $this->jwtConfiguration->signingKey());
